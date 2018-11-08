@@ -15,7 +15,7 @@ class Componente:
   def __init__(self):
     self.cat= str(self.__class__.__name__)
 
- #este metodo mostrará por pantalla un componente lexico
+ #este metodo mostrara por pantalla un componente lexico
   def __str__(self):
     s=[]
     for k,v in self.__dict__.items():
@@ -83,10 +83,12 @@ class OpMult(Componente):
 #Puede dividirse en 2 para representar los enteros y los reales de forma independiente
 #Si se opta por una sola categoria debe alamcenarse el tipo de los datos ademas del valor
 class Numero (Componente):
-  def __init__(self, v,nl):
+  def __init__(self, v,nl,t):
    Componente.__init__(self)
    self.valor = v
+   self.tipo=t
    self.linea=nl
+   
 
 #clase para representar los identificadores.
 class Identif (Componente):
