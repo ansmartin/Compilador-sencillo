@@ -52,8 +52,6 @@ class Analex:
         if ch==" ":
             # quitar todos los caracteres blancos 
             #buscar el siguiente componente lexico que sera devuelto )
-            #while self.fl.posleida()==" ":
-            #    self.fl.siguiente()
             return self.Analiza()
 
         elif len(ch) == 0:
@@ -190,7 +188,6 @@ class Analex:
             #incrementa el numero de linea ya que acabamos de saltar a otra
             # devolver el siguiente componente encontrado
             self.nlinea+=1
-            #return self.fl.siguiente()
             return self.Analiza()
 
         else:
