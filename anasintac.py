@@ -11,96 +11,117 @@ from sys import argv
 from sets import ImmutableSet
 
 class Anasintac:
-    #############################################################################
-    ##  Conjunto de palabras reservadas para comprobar si un identificador es PR
-    #############################################################################
-    PR = ImmutableSet(["PROGRAMA", "VAR", "VECTOR","DE", "ENTERO", "REAL", "BOOLEANO", "PROC", "FUNCION", "INICIO", "FIN", "SI", "ENTONCES", "SINO", "MIENTRAS", "HACER", "LEE", "ESCRIBE", "Y", "O", "NO", "CIERTO","FALSO"])
- 
- 
-    #############################################################################
-    ##  Rangos para comprobar si un caracter es un numero o una letra valida
-    #############################################################################
-    numero = range(ord('0'),ord('9')+1)
-    letra_minus = range(ord('a'),ord('z')+1)
-    letra_mayus = range(ord('A'),ord('Z')+1)
-    
 
     ############################################################################
     #
     #  Funcion: __init__
     #  Tarea:  Constructor de la clase
-    #  Parametros:  flujo:  flujo de caracteres de entrada
+    #  Parametros:  --
     #  Devuelve: --
     #
     ############################################################################
-    def __init__(self, a, alex):
-        self.a=a
-        self.alex=alex
+    def __init__(self):
+        self.c=None     # componente actual
         
     ############################################################################
     #
     #  Funcion: Analiza
-    #  Tarea:  Identifica los diferentes componentes lexicos
-    #  Prametros:  --
-    #  Devuelve: Devuelve un componente lexico
+    #  Tarea:  
+    #  Parametros:  lista_com:  lista de componentes a analizar
+    #  Devuelve: Devuelve 
     #
     ############################################################################
-    def Analiza(self):
+    def Analiza(self, lista_com):
+        for componente in lista_com:
+            self.c = componente
+
+            if self.analizaPrograma():
+                return True
+            else:
+                return False
+
+    def analizaPrograma(self):
+        if self.c.cat == 'PR' and self.c.valor == 'PROGRAMA':
+            print 'eeeeee'
+        else:
+            print('Error en linea: '+self.c.linea)
+            return
+
+
+    def analizadecl_var(self):
+        if self.c.cat == 'PR':
+            if self.c.valor == 'VAR':
+                pass
+            elif self.c.valor == 'INICIO':
+                pass
+        else:
+            print('Error en linea: '+self.c.linea)
+            return
+
+    def analizadecl_v(self):
         pass
 
-    def analizaPrograma():
-        if self.a == "PROGRAMA":
-            V
+    def analizalista_id(self):
+        pass
 
-    def analizadecl_var():
-        if self.a == "VAR":
-            V
+    def analizaresto_listaid(self):
+        pass
 
-    def analizadecl_v():
-        if self.a == "PROGRAMA":
-            V
+    def analizatipo(self):
+        pass
 
-    def analizalista_id():
+    def analizatipo_std(self):
+        pass
 
-    def analizaresto_listaid():
+    def analizainstrucciones(self):
+        pass
 
-    def analizatipo():
+    def analizalista_inst(self):
+        pass
 
-    def analizatipo_std():
+    def analizainstruccion(self):
+        pass
 
-    def analizainstrucciones():
+    def analizainst_simple(self):
+        pass
 
-    def analizalista_inst():
+    def analizaresto_instsimple(self):
+        pass
 
-    def analizainstruccion():
+    def analizavariable(self):
+        pass
 
-    def analizainst_simple():
+    def analizaresto_var(self):
+        pass
 
-    def analizaresto_instsimple():
+    def analizainst_es(self):
+        pass
 
-    def analizavariable():
+    def analizaexpresion(self):
+        pass
 
-    def analizaresto_var():
+    def analizaexpresion2(self):
+        pass
 
-    def analizainst_es():
+    def analizaexpr_simple(self):
+        pass
 
-    def analizaexpresion():
+    def analizaresto_exsimple(self):
+        pass
 
-    def analizaexpresion2():
+    def analizatermino(self):
+        pass
 
-    def analizaexpr_simple():
+    def analizaresto_term(self):
+        pass
 
-    def analizaresto_exsimple():
+    def analizafactor(self):
+        pass
 
-    def analizatermino():
+    def analizasigno(self):
+        pass
 
-    def analizaresto_term():
-
-    def analizafactor():
-
-    def analizasigno():
-
-    def analizaPunto():
+    
 
 ############################################################################
 #
@@ -113,20 +134,20 @@ class Anasintac:
 if __name__=="__main__":
     script,filename=argv
     txt=open(filename)
-    print "Este es tu fichero %r" % filename
+    #print "Este es tu fichero %r" % filename
     i=0
     fl = flujo.Flujo(txt)
-    analex = Analex(fl)
-    
-    c=analex.Analiza()
-    while c :
-        print(c)
-        c=analex.Analiza()
-    i=i+1
-    
+    alex = analex.Analex(fl)
 
-    """
-    except errores.Error as err :
-        sys.stderr.write("%s\n" % err)
-        analex.muestraError(sys.stderr)
-    """
+    com=[]
+    c=alex.Analiza()
+    while c :
+        com.append(c)
+        #print(c)
+        c=alex.Analiza()
+        
+    i=i+1
+
+    #print com
+    Anasintac().Analiza(com)
+    

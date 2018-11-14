@@ -54,7 +54,8 @@ class Analex:
             #buscar el siguiente componente lexico que sera devuelto )
             return self.Analiza()
 
-        elif len(ch) == 0:
+        elif ch=='':
+            # cuando ya no encuentre nada acaba
             return
 
         elif ch=="+" or ch=="-":
@@ -218,8 +219,4 @@ if __name__=="__main__":
     i=i+1
     
 
-    """
-    except errores.Error as err :
-        sys.stderr.write("%s\n" % err)
-        analex.muestraError(sys.stderr)
-    """
+    
