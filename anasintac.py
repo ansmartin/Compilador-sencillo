@@ -21,41 +21,74 @@ class Anasintac:
     #
     ############################################################################
     def __init__(self):
-        self.c=None     # componente actual
-        
+        self.alex = None  # analizador lexico
+        self.c = None     # componente actual
+
+
+    # coge el siguiente componente en la lista
+    def siguiente(self):
+        self.c=self.alex.Analiza()
+    
+    # comprueba que la categoria del componente sea igual
+    def compruebacat(self, cat):
+        if self.c.cat == cat:
+            self.siguiente()
+            return True
+        else:
+            self.error(cat)
+
+    # comprueba que la categoria y el valor del componente sean iguales     
+    def compruebacatyvalor(self, cat, valor):
+        if self.c.cat == cat:
+            if self.c.valor == valor:
+                self.siguiente()
+                return True
+            else:
+                self.error(valor)
+        else:
+            self.error(cat)
+
+    # imprime cual es el error
+    def error(self, e):
+        print 'Error con ',self.c,'\t Deberia ser: ',e
+ 
+
     ############################################################################
     #
     #  Funcion: Analiza
     #  Tarea:  
-    #  Parametros:  lista_com:  lista de componentes a analizar
+    #  Parametros:  analex:  analizador lexico
     #  Devuelve: Devuelve 
     #
     ############################################################################
-    def Analiza(self, lista_com):
-        for componente in lista_com:
-            self.c = componente
+    def Analiza(self, analex):
+        self.alex=analex
+        self.siguiente()
 
-            if self.analizaPrograma():
-                return True
-            else:
-                return False
-
+        if self.analizaPrograma():
+            print '\nAnalizado con exito'
+        
+    
     def analizaPrograma(self):
-        if self.c.cat == 'PR' and self.c.valor == 'PROGRAMA':
-            print 'eeeeee'
+        if self.compruebacatyvalor('PR','PROGRAMA'):
+            if not self.compruebacat('Identif'): return
+            if not self.compruebacat('PtoComa'): return
+            if not self.analizadecl_var(): return
+            if not self.analizainstrucciones(): return
+            if not self.compruebacat('Punto'): return
+            return True
         else:
-            print('Error en linea: '+self.c.linea)
             return
 
 
     def analizadecl_var(self):
-        if self.c.cat == 'PR':
-            if self.c.valor == 'VAR':
-                pass
-            elif self.c.valor == 'INICIO':
-                pass
+        if self.compruebacatyvalor('PR','VAR'):
+
+            return True
+        elif self.compruebacat('INICIO'):
+
+            return True
         else:
-            print('Error en linea: '+self.c.linea)
             return
 
     def analizadecl_v(self):
@@ -137,17 +170,11 @@ if __name__=="__main__":
     #print "Este es tu fichero %r" % filename
     i=0
     fl = flujo.Flujo(txt)
-    alex = analex.Analex(fl)
+    analex = analex.Analex(fl)
+    
+    Anasintac().Analiza(analex)
 
-    com=[]
-    c=alex.Analiza()
-    while c :
-        com.append(c)
-        #print(c)
-        c=alex.Analiza()
-        
     i=i+1
 
-    #print com
-    Anasintac().Analiza(com)
+    
     
