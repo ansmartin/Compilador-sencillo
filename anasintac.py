@@ -25,10 +25,18 @@ class Anasintac:
         self.c = None     # componente actual
 
 
-    # coge el siguiente componente en la lista
+    # coge el siguiente componente
     def siguiente(self):
         self.c=self.alex.Analiza()
-    
+    """
+    # devuelve si la categoria del componente es igual o no
+    def igualcat(self, cat):
+        return self.c.cat == cat
+
+    # devuelve si la categoria y el valor del componente son iguales o no     
+    def igualcatyvalor(self, cat, valor):
+        return self.c.cat == cat and self.c.valor == valor
+    """
     # comprueba que la categoria del componente sea igual
     def compruebacat(self, cat):
         if self.c.cat == cat:
@@ -44,7 +52,7 @@ class Anasintac:
                 self.siguiente()
                 return True
             else:
-                self.error(valor)
+                self.error(cat+' (valor = '+valor+')')
         else:
             self.error(cat)
 
@@ -64,92 +72,178 @@ class Anasintac:
     def Analiza(self, analex):
         self.alex=analex
         self.siguiente()
-
         if self.analizaPrograma():
-            print '\nAnalizado con exito'
+            print 'Analizado con exito'
         
     
     def analizaPrograma(self):
-        if self.compruebacatyvalor('PR','PROGRAMA'):
-            if not self.compruebacat('Identif'): return
-            if not self.compruebacat('PtoComa'): return
-            if not self.analizadecl_var(): return
-            if not self.analizainstrucciones(): return
-            if not self.compruebacat('Punto'): return
-            return True
+        if self.c.cat == 'PR' and self.c.valor == 'PROGRAMA':
+            self.siguiente()
+            if (
+                self.compruebacat('Identif')
+                and self.compruebacat('PtoComa')
+                and self.analizadecl_var()
+                and self.analizainstrucciones()
+                #and self.compruebacat('Punto')
+                ): return True
         else:
-            return
+            self.error('PR (valor = PROGRAMA)')
+
+        """
+        if sself.c.cat == 'PR' and self.c.valor == 'PROGRAMA':
+            self.siguiente()
+            if self.compruebacat('Identif'):
+                self.siguiente()
+                if self.compruebacat('PtoComa'):
+                    self.siguiente()
+                    if self.analizadecl_var():
+                        return True
+        """    
+        
 
 
     def analizadecl_var(self):
-        if self.compruebacatyvalor('PR','VAR'):
+        if self.c.cat == 'PR' and self.c.valor == 'VAR':
+            self.siguiente()
+            if (
+                self.analizalista_id()
+                and self.compruebacat('DosPtos')
+                and self.analizatipo()
+                and self.compruebacat('PtoComa')
+                and self.analizadecl_v()
+                ): return True
 
+        elif self.c.cat == 'PR' and self.c.valor == 'INICIO':
             return True
-        elif self.compruebacat('INICIO'):
 
-            return True
         else:
-            return
+            self.error('PR (valor = VAR) | PR (valor = INICIO)')
+
 
     def analizadecl_v(self):
-        pass
+        if self.c.cat == 'Identif':
+            #self.siguiente()
+            if (
+                self.analizalista_id()
+                and self.compruebacat('DosPtos')
+                and self.analizatipo()
+                and self.compruebacat('PtoComa')
+                and self.analizadecl_v()
+                ): return True
+
+        elif self.c.cat == 'PR' and self.c.valor == 'INICIO':
+            return True
+
+        else:
+            self.error('Identif | PR (valor = INICIO)')
+
 
     def analizalista_id(self):
-        pass
+        if self.c.cat == 'Identif':
+            self.siguiente()
+            return self.analizaresto_listaid()
+            
+        else:
+            self.error('Identif')
+
 
     def analizaresto_listaid(self):
-        pass
+        if self.c.cat == 'Coma':
+            self.siguiente()
+            return self.analizalista_id()
+                
+
+        elif self.c.cat == 'DosPtos':
+            return True
+
+        else:
+            self.error('Coma | DosPtos')
+
 
     def analizatipo(self):
-        pass
+        if self.c.cat == 'PR' and (self.c.valor == 'ENTERO' or self.c.valor == 'REAL' or self.c.valor == 'BOOLEANO'):
+            return self.analizatipo_std()
+
+        elif self.c.cat == 'PR' and self.c.valor == 'VECTOR':
+            self.siguiente()
+            if (
+                self.compruebacat('CorAp')
+                and (self.compruebacat('Numero') and self.c.tipo == int)
+                and self.compruebacat('CorCi')
+                and self.compruebacatyvalor('PR','DE')
+                and self.analizatipo_std()
+                ): return True 
+        else:
+            self.error('PR (valor = ENTERO) | PR (valor = REAL) | PR (valor = BOOLEANO) | PR (valor = VECTOR)')
+
 
     def analizatipo_std(self):
-        pass
+        if self.c.cat == 'PR' and (self.c.valor == 'ENTERO' or self.c.valor == 'REAL' or self.c.valor == 'BOOLEANO'):
+            self.siguiente()
+            return True
+        else:
+            self.error('PR (valor = ENTERO) | PR (valor = REAL) | PR (valor = BOOLEANO)')
+
 
     def analizainstrucciones(self):
-        pass
+        print 'hello'
+
 
     def analizalista_inst(self):
         pass
 
+
     def analizainstruccion(self):
         pass
+
 
     def analizainst_simple(self):
         pass
 
+
     def analizaresto_instsimple(self):
         pass
+
 
     def analizavariable(self):
         pass
 
+
     def analizaresto_var(self):
         pass
+
 
     def analizainst_es(self):
         pass
 
+
     def analizaexpresion(self):
         pass
+
 
     def analizaexpresion2(self):
         pass
 
+
     def analizaexpr_simple(self):
         pass
+
 
     def analizaresto_exsimple(self):
         pass
 
+
     def analizatermino(self):
         pass
+
 
     def analizaresto_term(self):
         pass
 
+
     def analizafactor(self):
         pass
+
 
     def analizasigno(self):
         pass
