@@ -152,7 +152,6 @@ class Anasintac:
             self.siguiente()
             return self.analizalista_id()
                 
-
         elif self.c.cat == 'DosPtos':
             return True
 
@@ -161,7 +160,7 @@ class Anasintac:
 
 
     def analizatipo(self):
-        if self.c.cat == 'PR' and (self.c.valor == 'ENTERO' or self.c.valor == 'REAL' or self.c.valor == 'BOOLEANO'):
+        if self.c.cat == 'PR' and (self.c.valor in ['ENTERO','REAL','BOOLEANO']):
             return self.analizatipo_std()
 
         elif self.c.cat == 'PR' and self.c.valor == 'VECTOR':
@@ -178,7 +177,7 @@ class Anasintac:
 
 
     def analizatipo_std(self):
-        if self.c.cat == 'PR' and (self.c.valor == 'ENTERO' or self.c.valor == 'REAL' or self.c.valor == 'BOOLEANO'):
+        if self.c.cat == 'PR' and (self.c.valor in ['ENTERO','REAL','BOOLEANO']):
             self.siguiente()
             return True
         else:
@@ -186,15 +185,63 @@ class Anasintac:
 
 
     def analizainstrucciones(self):
-        print 'hello'
+        if self.c.cat == 'PR' and self.c.valor == 'INICIO':
+            self.siguiente()
+            if (
+                self.analizalista_inst()
+                and self.compruebacatyvalor('PR','FIN')
+                ): return True 
+        else:
+            self.error('PR (valor = INICIO)')
+
 
 
     def analizalista_inst(self):
-        pass
+        if (self.c.cat == 'PR' and (self.c.valor in ['INICIO','LEE','ESCRIBE','SI','MIENTRAS'])) or self.c.cat == 'Identif':
+            if (
+                self.analizainstruccion()
+                and self.compruebacat('PtoComa')
+                and self.analizalista_inst()
+                ): return True
+        elif self.c.cat == 'PR' and self.c.valor == 'FIN':
+            return True
+        else:
+            self.error('PR (valor = INICIO) | Identif | PR (valor = LEE) | PR (valor = ESCRIBE) | PR (valor = SI) | PR (valor = MIENTRAS) | PR (valor = FIN)')
 
 
     def analizainstruccion(self):
-        pass
+        if self.c.cat == 'PR' and self.c.valor == 'INICIO':
+            self.siguiente()
+            if (
+                self.analizalista_inst()
+                and self.compruebacatyvalor('PR','FIN')
+                ): return True
+
+        elif self.c.cat == 'Identif':
+            return self.analizainst_simple()
+        elif self.c.cat == 'PR' and (self.c.valor == 'LEE' or self.c.valor == 'ESCRIBE'):   
+            return self.analizainst_es()
+        elif self.c.cat == 'PR' and self.c.valor == 'SI':
+            self.siguiente()
+            if (
+                self.analizaexpresion()
+                and self.compruebacatyvalor('PR','ENTONCES')
+                and self.analizainstruccion()
+                and self.compruebacatyvalor('PR','SINO')
+                and self.analizainstruccion()
+                ): return True 
+
+        elif self.c.cat == 'PR' and self.c.valor == 'MIENTRAS':
+            self.siguiente()
+            if (
+                self.analizaexpresion()
+                and self.compruebacatyvalor('PR','HACER')
+                and self.analizainstruccion()
+                ): return True 
+
+        else:
+            self.error('PR (valor = INICIO) | Identif | PR (valor = LEE) | PR (valor = ESCRIBE) | PR (valor = SI) | PR (valor = MIENTRAS)')
+
 
 
     def analizainst_simple(self):
