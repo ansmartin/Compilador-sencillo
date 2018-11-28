@@ -28,15 +28,8 @@ class Anasintac:
     # coge el siguiente componente
     def siguiente(self):
         self.c=self.alex.Analiza()
-    """
-    # devuelve si la categoria del componente es igual o no
-    def igualcat(self, cat):
-        return self.c.cat == cat
 
-    # devuelve si la categoria y el valor del componente son iguales o no     
-    def igualcatyvalor(self, cat, valor):
-        return self.c.cat == cat and self.c.valor == valor
-    """
+
     # comprueba que la categoria del componente sea igual
     def compruebacat(self, cat):
         if self.c.cat == cat:
@@ -66,7 +59,7 @@ class Anasintac:
     #  Funcion: Analiza
     #  Tarea:  
     #  Parametros:  analex:  analizador lexico
-    #  Devuelve: Devuelve 
+    #  Devuelve:
     #
     ############################################################################
     def Analiza(self, analex):
@@ -75,7 +68,7 @@ class Anasintac:
         if self.analizaPrograma():
             print 'Analizado con exito'
         
-    
+ 
     def analizaPrograma(self):
         if self.c.cat == 'PR' and self.c.valor == 'PROGRAMA':
             self.siguiente()
@@ -84,22 +77,10 @@ class Anasintac:
                 and self.compruebacat('PtoComa')
                 and self.analizadecl_var()
                 and self.analizainstrucciones()
-                #and self.compruebacat('Punto')
+                and self.compruebacat('Punto')
                 ): return True
         else:
             self.error('PR (valor = PROGRAMA)')
-
-        """
-        if sself.c.cat == 'PR' and self.c.valor == 'PROGRAMA':
-            self.siguiente()
-            if self.compruebacat('Identif'):
-                self.siguiente()
-                if self.compruebacat('PtoComa'):
-                    self.siguiente()
-                    if self.analizadecl_var():
-                        return True
-        """    
-        
 
 
     def analizadecl_var(self):
@@ -122,7 +103,6 @@ class Anasintac:
 
     def analizadecl_v(self):
         if self.c.cat == 'Identif':
-            #self.siguiente()
             if (
                 self.analizalista_id()
                 and self.compruebacat('DosPtos')
@@ -219,8 +199,10 @@ class Anasintac:
 
         elif self.c.cat == 'Identif':
             return self.analizainst_simple()
+
         elif self.c.cat == 'PR' and (self.c.valor == 'LEE' or self.c.valor == 'ESCRIBE'):   
             return self.analizainst_es()
+
         elif self.c.cat == 'PR' and self.c.valor == 'SI':
             self.siguiente()
             if (
@@ -237,7 +219,7 @@ class Anasintac:
                 self.analizaexpresion()
                 and self.compruebacatyvalor('PR','HACER')
                 and self.analizainstruccion()
-                ): return True 
+                ): return True
 
         else:
             self.error('PR (valor = INICIO) | Identif | PR (valor = LEE) | PR (valor = ESCRIBE) | PR (valor = SI) | PR (valor = MIENTRAS)')
@@ -245,55 +227,219 @@ class Anasintac:
 
 
     def analizainst_simple(self):
-        pass
+        if self.c.cat == 'Identif':
+            self.siguiente()
+            return self.analizaresto_instsimple()
+
+        else:
+            self.error('Identif')
 
 
     def analizaresto_instsimple(self):
-        pass
+        if self.c.cat == 'OpAsigna':
+            self.siguiente()
+            return self.analizaexpresion()
+
+        elif self.c.cat == 'CorAp':
+            self.siguiente()
+            if (
+                self.analizaexpr_simple()
+                and self.compruebacat('CorCi')
+                and self.compruebacat('OpAsigna')
+                and self.analizaexpresion()
+                ): return True 
+
+        elif (self.c.cat == 'PtoComa') or (self.c.cat == 'PR' and self.c.valor == 'SINO'):
+            return True
+
+        else:
+            self.error('OpAsigna | CorAp | PtoComa | PR (valor = SINO)')
 
 
     def analizavariable(self):
-        pass
+        if self.c.cat == 'Identif':
+            self.siguiente()
+            return self.analizaresto_var()
+
+        else:
+            self.error('Identif')
 
 
     def analizaresto_var(self):
-        pass
+        if self.c.cat == 'CorAp':
+            self.siguiente()
+            if (
+                self.analizaexpr_simple()
+                and self.compruebacat('CorCi')
+                ): return True 
+
+        elif (self.c.cat in ['OpMult','OpAdd','OpRel','CorCi','ParentCi','PtoComa']) or (self.c.cat == 'PR' and self.c.valor in ['Y','O','ENTONCES','HACER','SINO']):
+            return True
+
+        else:
+            self.error('CorAp | OpMult | OpAdd | OpRel | CorCi | ParentCi | PtoComa | PR (valor = Y) | PR (valor = O) | PR (valor = ENTONCES) | PR (valor = HACER) | PR (valor = SINO)')
+
 
 
     def analizainst_es(self):
-        pass
+        if self.c.cat == 'PR' and self.c.valor == 'LEE':
+            self.siguiente()
+            if (
+                self.compruebacat('CorAp')
+                and self.compruebacat('Identif')
+                and self.compruebacat('CorCi')
+                ): return True
+
+        elif self.c.cat == 'PR' and self.c.valor == 'ESCRIBE':
+            self.siguiente()
+            if (
+                self.compruebacat('ParentAp')
+                and self.analizaexpr_simple()
+                and self.compruebacat('ParentCi')
+                ): return True
+        else:
+            self.error('PR (valor = LEE) | PR (valor = ESCRIBE)')
 
 
     def analizaexpresion(self):
-        pass
+        if (self.c.cat in ['Identif','Numero','ParentAp','OpAdd']) or (self.c.cat == 'PR' and self.c.valor in ['NO','CIERTO','FALSO']):
+            if (
+                self.analizaexpr_simple()
+                and self.analizaexpresion2()
+                ): return True
+        else:
+            self.error('Identif | Numero | ParentAp | OpAdd | PR (valor = NO) | PR (valor = CIERTO | PR (valor = FALSO)')
 
 
     def analizaexpresion2(self):
-        pass
+        if self.c.cat == 'OpRel':
+            self.siguiente()
+            return self.analizaexpr_simple()
+
+        elif (self.c.cat in ['ParentCi','PtoComa']) or (self.c.cat == 'PR' and self.c.valor in ['ENTONCES','HACER','SINO']):
+            return True
+
+        else:
+            self.error('ParentCi | PtoComa | PR (valor = ENTONCES) | PR (valor = HACER) | PR (valor = SINO)')
+
 
 
     def analizaexpr_simple(self):
-        pass
+        if (self.c.cat in ['Identif','Numero','ParentAp']) or (self.c.cat == 'PR' and self.c.valor in ['NO','CIERTO','FALSO']):
+            if (
+                self.analizatermino()
+                and self.analizaresto_exsimple()
+                ): return True
+
+        elif self.c.cat == 'OpAdd':
+            if (
+                self.analizasigno()
+                and self.analizatermino()
+                and self.analizaresto_exsimple()
+                ): return True
+
+        else:
+            self.error('Identif | Numero | ParentAp | OpAdd | PR (valor = NO) | PR (valor = CIERTO | PR (valor = FALSO)')
+
 
 
     def analizaresto_exsimple(self):
-        pass
+        if self.c.cat == 'OpAdd':
+            self.siguiente()
+            if (
+                self.analizatermino()
+                and self.analizaresto_exsimple()
+                ): return True
+
+        elif self.c.cat == 'PR' and self.c.valor == 'O':
+            self.siguiente()
+            if (
+                self.compruebacatyvalor('PR','O')
+                and self.analizatermino()
+                and self.analizaresto_exsimple()
+                ): return True
+
+        elif (self.c.cat in ['CorCi','OpRel','ParentCi','PtoComa']) or (self.c.cat == 'PR' and self.c.valor in ['ENTONCES','HACER','SINO']):
+            return True
+
+        else:
+            self.error('OpAdd | CorCi | OpRel | ParentCi | PtoComa | PR (valor = O) | PR (valor = ENTONCES) | PR (valor = HACER) | PR (valor = SINO)')
+  
 
 
     def analizatermino(self):
-        pass
-
+        if (self.c.cat in ['Identif','Numero','ParentAp']) or (self.c.cat == 'PR' and self.c.valor in ['NO','CIERTO','FALSO']):
+            if (
+                self.analizafactor()
+                and self.analizaresto_term()
+                ): return True
+        
+        else:
+            self.error('Identif | Numero | ParentAp | PR (valor = NO) | PR (valor = CIERTO) | PR (valor = FALSO)')
+  
 
     def analizaresto_term(self):
-        pass
+        if self.c.cat == 'OpMult':
+            self.siguiente()
+            if (
+                self.analizafactor()
+                and self.analizaresto_term()
+                ): return True
+
+        elif self.c.cat == 'PR' and self.c.valor == 'Y':
+            self.siguiente()
+            if (
+                self.analizafactor()
+                and self.analizaresto_term()
+                ): return True
+
+        elif (self.c.cat in ['OpAdd','CorCi','OpRel','ParentCi','PtoComa']) or (self.c.cat == 'PR' and self.c.valor in ['O','ENTONCES','HACER','SINO']):
+            return True
+
+        else:
+            self.error('OpAdd | CorCi | OpRel | ParentCi | PtoComa | PR (valor = O) | PR (valor = ENTONCES) | PR (valor = HACER) | PR (valor = SINO)')
+  
 
 
     def analizafactor(self):
-        pass
+        if self.c.cat == 'Identif':
+            return self.analizavariable()
+
+        elif self.c.cat == 'Numero':
+            self.siguiente()
+            return True
+
+        elif self.c.cat == 'ParentAp':
+            self.siguiente()
+            if (
+                self.analizaexpresion()
+                and self.compruebacat('ParentCi')
+                ): return True
+
+        elif self.c.cat == 'PR' and self.c.valor == 'NO':
+            self.siguiente()
+            return self.analizafactor()
+
+        elif self.c.cat == 'PR' and self.c.valor == 'CIERTO':
+            self.siguiente()
+            return True
+
+        elif self.c.cat == 'PR' and self.c.valor == 'FALSO':
+            self.siguiente()
+            return True
+        
+        else:
+            self.error('Identif | Numero | ParentAp | PR (valor = NO) | PR (valor = CIERTO) | PR (valor = FALSO)')
+  
 
 
     def analizasigno(self):
-        pass
+        if self.c.cat == 'OpAdd':
+            self.siguiente()
+            return True
+        
+        else:
+            self.error('OpAdd')
 
     
 
