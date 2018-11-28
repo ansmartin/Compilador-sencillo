@@ -12,6 +12,12 @@ from sets import ImmutableSet
 
 class Anasintac:
 
+    #############################################################################
+    ##  Lista de identificadores declarados
+    #############################################################################
+    ids={}
+
+
     ############################################################################
     #
     #  Funcion: __init__
@@ -120,6 +126,11 @@ class Anasintac:
 
     def analizalista_id(self):
         if self.c.cat == 'Identif':
+            # Comprobacion semantica 1: Dos objetos no pueden tener el mismo nombre
+            if self.c.valor in self.ids:
+                return self.error('Identif con otro valor distinto, el actual ya esta definido')
+            self.ids[self.c.valor]=True
+
             self.siguiente()
             return self.analizaresto_listaid()
             
@@ -406,6 +417,10 @@ class Anasintac:
             return self.analizavariable()
 
         elif self.c.cat == 'Numero':
+            #Comprobacion semantica 3: Conversion de enteros a reales
+            if self.c.tipo == 'int':
+                pass
+
             self.siguiente()
             return True
 
