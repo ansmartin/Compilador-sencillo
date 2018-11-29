@@ -419,7 +419,8 @@ class Anasintac:
         elif self.c.cat == 'Numero':
             #Comprobacion semantica 3: Conversion de enteros a reales
             if self.c.tipo == 'int':
-                pass
+                self.c.valor = float(self.c.valor)
+                self.c.tipo = 'float'
 
             self.siguiente()
             return True
@@ -470,13 +471,12 @@ if __name__=="__main__":
     script,filename=argv
     txt=open(filename)
     #print "Este es tu fichero %r" % filename
-    i=0
+    
     fl = flujo.Flujo(txt)
     analex = analex.Analex(fl)
     
     Anasintac().Analiza(analex)
 
-    i=i+1
 
     
     
