@@ -95,6 +95,8 @@ class Identif (Componente):
   def __init__(self,v,nl):
     Componente.__init__(self)
     self.valor= v
+    self.tipo=None
+    self.tamvector=None
     self.linea=nl
 
 #Clase que reprresenta las palabras reservadas.

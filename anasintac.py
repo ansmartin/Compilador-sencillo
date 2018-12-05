@@ -17,6 +17,8 @@ class Anasintac:
     #############################################################################
     ids={}
 
+    actual=None
+
 
     ############################################################################
     #
@@ -129,7 +131,9 @@ class Anasintac:
             # Comprobacion semantica 1: Dos objetos no pueden tener el mismo nombre
             if self.c.valor in self.ids:
                 return self.error('Identif con otro valor distinto, el actual ya esta definido')
-            self.ids[self.c.valor]=True
+            #
+            self.ids[self.c.valor]=self.c
+            self.actual=self.c.valor
 
             self.siguiente()
             return self.analizaresto_listaid()
@@ -155,10 +159,13 @@ class Anasintac:
             return self.analizatipo_std()
 
         elif self.c.cat == 'PR' and self.c.valor == 'VECTOR':
+            #
+            self.ids[self.actual].tipo='vector'
+            
             self.siguiente()
             if (
                 self.compruebacat('CorAp')
-                and (self.compruebacat('Numero') and self.c.tipo == int)
+                and (self.compruebacat('Numero') and self.c.tipo == 'int')
                 and self.compruebacat('CorCi')
                 and self.compruebacatyvalor('PR','DE')
                 and self.analizatipo_std()
@@ -169,6 +176,9 @@ class Anasintac:
 
     def analizatipo_std(self):
         if self.c.cat == 'PR' and (self.c.valor in ['ENTERO','REAL','BOOLEANO']):
+            #
+            self.ids[self.actual].tipo=self.c.valor
+            
             self.siguiente()
             return True
         else:
@@ -239,6 +249,7 @@ class Anasintac:
 
     def analizainst_simple(self):
         if self.c.cat == 'Identif':
+            self.actual = self.c.valor
             self.siguiente()
             return self.analizaresto_instsimple()
 
@@ -417,10 +428,14 @@ class Anasintac:
             return self.analizavariable()
 
         elif self.c.cat == 'Numero':
-            #Comprobacion semantica 3: Conversion de enteros a reales
-            if self.c.tipo == 'int':
-                self.c.valor = float(self.c.valor)
-                self.c.tipo = 'float'
+
+            #Comprobacion semantica 5: No hay conversion para los booleanos
+            if self.ids[self.actual].tipo!='BOOLEANO':
+
+                #Comprobacion semantica 3: Conversion de enteros a reales
+                if self.c.tipo == 'int':
+                    self.c.valor = float(self.c.valor)
+                    self.c.tipo = 'float'
 
             self.siguiente()
             return True
