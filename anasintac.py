@@ -160,7 +160,7 @@ class Anasintac:
 
         elif self.c.cat == 'PR' and self.c.valor == 'VECTOR':
             #
-            self.ids[self.actual].tipo='vector'
+            self.ids[self.actual].tipo=self.c.valor
             
             self.siguiente()
             if (
@@ -428,14 +428,20 @@ class Anasintac:
             return self.analizavariable()
 
         elif self.c.cat == 'Numero':
-
+            
             #Comprobacion semantica 5: No hay conversion para los booleanos
-            if self.ids[self.actual].tipo!='BOOLEANO':
+            if self.ids[self.actual].tipo=='BOOLEANO':
+                return False
 
-                #Comprobacion semantica 3: Conversion de enteros a reales
-                if self.c.tipo == 'int':
-                    self.c.valor = float(self.c.valor)
-                    self.c.tipo = 'float'
+            #Comprobacion semantica 6: El numero debe estar en el rango del vector
+            if self.ids[self.actual].tipo=='VECTOR':
+                if self.ids[self.actual].tamvector < self.c.valor:
+                    return False
+
+            #Comprobacion semantica 3: Conversion de enteros a reales
+            if self.c.tipo == 'int':
+                self.c.valor = float(self.c.valor)
+                self.c.tipo = 'float'
 
             self.siguiente()
             return True
