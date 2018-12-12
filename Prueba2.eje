@@ -1,0 +1,5 @@
+PROGRAMA p1;
+VAR i,x:ENTERO;
+INICIO
+  z:=8;
+FIN.

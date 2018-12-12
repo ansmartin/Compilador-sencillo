@@ -131,7 +131,8 @@ class Anasintac:
             # Comprobacion semantica 1: Dos objetos no pueden tener el mismo nombre
             if self.c.valor in self.ids:
                 return self.error('Identif con otro valor distinto, el actual ya esta definido')
-            #
+
+            # guardo el identificador en el diccionario de ids
             self.ids[self.c.valor]=self.c
             self.actual=self.c.valor
 
@@ -163,20 +164,28 @@ class Anasintac:
             self.ids[self.actual].tipo=self.c.valor
             
             self.siguiente()
-            if (
-                self.compruebacat('CorAp')
-                and (self.compruebacat('Numero') and self.c.tipo == 'int')
-                and self.compruebacat('CorCi')
-                and self.compruebacatyvalor('PR','DE')
-                and self.analizatipo_std()
-                ): return True 
+            if self.compruebacat('CorAp'):
+                #Comprobacion semantica adicional: No puede haber vectores con un numero real de elementos
+                if self.c.cat == 'Numero' and self.c.tipo == 'int':
+
+                    # guardo el tamano del vector para comprobar luego que al acceder se esta dentro del rango
+                    self.ids[self.actual].tamvector=self.c.valor
+
+                    self.siguiente()
+                    if (
+                        self.compruebacat('CorCi')
+                        and self.compruebacatyvalor('PR','DE')
+                        and self.analizatipo_std()
+                    ): return True
+                else:
+                    self.error('Numero entero')
         else:
             self.error('PR (valor = ENTERO) | PR (valor = REAL) | PR (valor = BOOLEANO) | PR (valor = VECTOR)')
 
 
     def analizatipo_std(self):
         if self.c.cat == 'PR' and (self.c.valor in ['ENTERO','REAL','BOOLEANO']):
-            #
+            # guardo el tipo del identificador
             self.ids[self.actual].tipo=self.c.valor
             
             self.siguiente()
@@ -250,6 +259,11 @@ class Anasintac:
     def analizainst_simple(self):
         if self.c.cat == 'Identif':
             self.actual = self.c.valor
+
+            #Comprobacion semantica adicional: El identificador debe estar declarado antes de hacerle algo
+            if self.c.valor not in self.ids:
+                return self.error('Un Identif previamente declarado')
+            
             self.siguiente()
             return self.analizaresto_instsimple()
 
@@ -280,6 +294,11 @@ class Anasintac:
 
     def analizavariable(self):
         if self.c.cat == 'Identif':
+            
+            #Comprobacion semantica adicional: El identificador debe estar declarado antes de hacerle algo
+            if self.c.valor not in self.ids:
+                return self.error('Un Identif previamente declarado')
+
             self.siguiente()
             return self.analizaresto_var()
 
@@ -306,12 +325,14 @@ class Anasintac:
     def analizainst_es(self):
         if self.c.cat == 'PR' and self.c.valor == 'LEE':
             self.siguiente()
-            if (
-                self.compruebacat('CorAp')
-                and self.compruebacat('Identif')
-                and self.compruebacat('CorCi')
-                ): return True
+            if self.compruebacat('CorAp'):
+                if self.c.cat == 'Identif':
+                    #Comprobacion semantica 7: En la instruccion LEE el argumento debe ser ENTERO o REAL
+                    if self.c.cat.tipo=='ENTERO' or self.c.cat.tipo=='REAL':
+                        self.siguiente()   
+                        return self.compruebacat('CorCi')
 
+                    
         elif self.c.cat == 'PR' and self.c.valor == 'ESCRIBE':
             self.siguiente()
             if (
@@ -430,11 +451,11 @@ class Anasintac:
         elif self.c.cat == 'Numero':
             
             #Comprobacion semantica 5: No hay conversion para los booleanos
-            if self.ids[self.actual].tipo=='BOOLEANO':
+            if self.actual in self.ids and self.ids[self.actual].tipo=='BOOLEANO':
                 return False
 
             #Comprobacion semantica 6: El numero debe estar en el rango del vector
-            if self.ids[self.actual].tipo=='VECTOR':
+            if self.actual in self.ids and self.ids[self.actual].tipo=='VECTOR':
                 if self.ids[self.actual].tamvector < self.c.valor:
                     return False
 
