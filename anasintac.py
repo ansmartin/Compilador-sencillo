@@ -13,11 +13,17 @@ from sets import ImmutableSet
 class Anasintac:
 
     #############################################################################
-    ##  Lista de identificadores declarados
+    ##  Diccionario de identificadores declarados
     #############################################################################
     ids={}
 
-    actual=None
+
+    #############################################################################
+    ##  Variables
+    #############################################################################
+    actual=None # valor del ultimo identificador encontrado
+    dentrovector=False # para comprobar si estamos en un vector para la comprobacion semantica 6
+
 
 
     ############################################################################
@@ -130,7 +136,7 @@ class Anasintac:
         if self.c.cat == 'Identif':
             # Comprobacion semantica 1: Dos objetos no pueden tener el mismo nombre
             if self.c.valor in self.ids:
-                return self.error('Identif con otro valor distinto, el actual ya esta definido')
+                return self.error('Otro Identif con un valor distinto, el actual ya esta definido')
 
             # guardo el identificador en el diccionario de ids
             self.ids[self.c.valor]=self.c
@@ -160,12 +166,9 @@ class Anasintac:
             return self.analizatipo_std()
 
         elif self.c.cat == 'PR' and self.c.valor == 'VECTOR':
-            #
-            self.ids[self.actual].tipo=self.c.valor
-            
             self.siguiente()
             if self.compruebacat('CorAp'):
-                #Comprobacion semantica adicional: No puede haber vectores con un numero real de elementos
+                # Comprobacion semantica adicional: No puede haber vectores con un numero de elementos que no sea entero
                 if self.c.cat == 'Numero' and self.c.tipo == 'int':
 
                     # guardo el tamano del vector para comprobar luego que al acceder se esta dentro del rango
@@ -260,7 +263,7 @@ class Anasintac:
         if self.c.cat == 'Identif':
             self.actual = self.c.valor
 
-            #Comprobacion semantica adicional: El identificador debe estar declarado antes de hacerle algo
+            # Comprobacion semantica adicional: El identificador debe estar declarado previamente antes de usarlo
             if self.c.valor not in self.ids:
                 return self.error('Un Identif previamente declarado')
             
@@ -277,13 +280,17 @@ class Anasintac:
             return self.analizaexpresion()
 
         elif self.c.cat == 'CorAp':
+            self.dentrovector=True
             self.siguiente()
             if (
                 self.analizaexpr_simple()
                 and self.compruebacat('CorCi')
-                and self.compruebacat('OpAsigna')
-                and self.analizaexpresion()
-                ): return True 
+                ):
+                self.dentrovector=False
+                if ( 
+                    self.compruebacat('OpAsigna') 
+                    and self.analizaexpresion()
+                    ): return True 
 
         elif (self.c.cat == 'PtoComa') or (self.c.cat == 'PR' and self.c.valor == 'SINO'):
             return True
@@ -295,7 +302,7 @@ class Anasintac:
     def analizavariable(self):
         if self.c.cat == 'Identif':
             
-            #Comprobacion semantica adicional: El identificador debe estar declarado antes de hacerle algo
+            # Comprobacion semantica adicional: El identificador debe estar declarado previamente antes de usarlo
             if self.c.valor not in self.ids:
                 return self.error('Un Identif previamente declarado')
 
@@ -327,7 +334,7 @@ class Anasintac:
             self.siguiente()
             if self.compruebacat('CorAp'):
                 if self.c.cat == 'Identif':
-                    #Comprobacion semantica 7: En la instruccion LEE el argumento debe ser ENTERO o REAL
+                    # Comprobacion semantica 7: En la instruccion LEE el argumento debe ser ENTERO o REAL
                     if self.c.cat.tipo=='ENTERO' or self.c.cat.tipo=='REAL':
                         self.siguiente()   
                         return self.compruebacat('CorCi')
@@ -449,17 +456,18 @@ class Anasintac:
             return self.analizavariable()
 
         elif self.c.cat == 'Numero':
-            
-            #Comprobacion semantica 5: No hay conversion para los booleanos
+            # Comprobacion semantica 5: No hay conversion para los booleanos
             if self.actual in self.ids and self.ids[self.actual].tipo=='BOOLEANO':
+                print('Error: No hay conversion para los booleanos')
                 return False
-
-            #Comprobacion semantica 6: El numero debe estar en el rango del vector
-            if self.actual in self.ids and self.ids[self.actual].tipo=='VECTOR':
-                if self.ids[self.actual].tamvector < self.c.valor:
+            
+            # Comprobacion semantica 6: El numero debe estar en el rango del vector
+            if self.dentrovector and self.actual in self.ids and self.ids[self.actual].tamvector!=None:
+                if self.c.valor < 0 or self.c.valor >= self.ids[self.actual].tamvector:
+                    self.error('Numero que este dentro del rango del vector. Tamano del vector = '+str(self.ids[self.actual].tamvector))
                     return False
 
-            #Comprobacion semantica 3: Conversion de enteros a reales
+            # Comprobacion semantica 3: Conversion de enteros a reales
             if self.c.tipo == 'int':
                 self.c.valor = float(self.c.valor)
                 self.c.tipo = 'float'
