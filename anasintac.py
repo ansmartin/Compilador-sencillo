@@ -6,6 +6,7 @@ import analex
 import flujo
 import string
 import sys
+import AST
 
 from sys import argv
 from sets import ImmutableSet
@@ -13,15 +14,10 @@ from sets import ImmutableSet
 class Anasintac:
 
     #############################################################################
-    ##  Diccionario de identificadores declarados
-    #############################################################################
-    ids={}
-
-
-    #############################################################################
     ##  Variables
     #############################################################################
     actual=None # valor del ultimo identificador encontrado
+    listavar=[] # lista de variables a declarar
     dentrovector=False # para comprobar si estamos en un vector para la comprobacion semantica 6
 
 
@@ -37,6 +33,9 @@ class Anasintac:
     def __init__(self):
         self.alex = None  # analizador lexico
         self.c = None     # componente actual
+        self.ids = {}       # tabla de simbolos implementada como un diccionario
+        self.ast = []       # arboles de sintaxis abstracta
+        self.aux_ast = None
 
 
     # coge el siguiente componente
@@ -79,8 +78,12 @@ class Anasintac:
     def Analiza(self, analex):
         self.alex=analex
         self.siguiente()
+
         if self.analizaPrograma():
-            print 'Analizado con exito'
+            print 'Programa analizado con exito\n\n- Arboles de sintaxis abstracta:\n'
+
+            for i in self.ast:
+                print i
         
  
     def analizaPrograma(self):
@@ -105,8 +108,9 @@ class Anasintac:
                 and self.compruebacat('DosPtos')
                 and self.analizatipo()
                 and self.compruebacat('PtoComa')
-                and self.analizadecl_v()
-                ): return True
+                ): 
+                self.listavar=[]
+                return self.analizadecl_v()
 
         elif self.c.cat == 'PR' and self.c.valor == 'INICIO':
             return True
@@ -122,8 +126,9 @@ class Anasintac:
                 and self.compruebacat('DosPtos')
                 and self.analizatipo()
                 and self.compruebacat('PtoComa')
-                and self.analizadecl_v()
-                ): return True
+                ): 
+                self.listavar=[]
+                return self.analizadecl_v()
 
         elif self.c.cat == 'PR' and self.c.valor == 'INICIO':
             return True
@@ -138,9 +143,11 @@ class Anasintac:
             if self.c.valor in self.ids:
                 return self.error('Otro Identif con un valor distinto, el actual ya esta definido')
 
-            # guardo el identificador en el diccionario de ids
+            # guardo el identificador en el diccionario de la tabla de simbolos
             self.ids[self.c.valor]=self.c
+            self.listavar.append(self.c.valor)
             self.actual=self.c.valor
+            
 
             self.siguiente()
             return self.analizaresto_listaid()
@@ -189,7 +196,8 @@ class Anasintac:
     def analizatipo_std(self):
         if self.c.cat == 'PR' and (self.c.valor in ['ENTERO','REAL','BOOLEANO']):
             # guardo el tipo del identificador
-            self.ids[self.actual].tipo=self.c.valor
+            for v in self.listavar:
+                self.ids[v].tipo=self.c.valor
             
             self.siguiente()
             return True
@@ -203,7 +211,9 @@ class Anasintac:
             if (
                 self.analizalista_inst()
                 and self.compruebacatyvalor('PR','FIN')
-                ): return True 
+                ): 
+                self.ast.append(AST.NodoCompuesta([AST.NodoEntero(3,self.alex.nlinea)], self.alex.nlinea))
+                return True 
         else:
             self.error('PR (valor = INICIO)')
 
@@ -512,7 +522,7 @@ class Anasintac:
 ############################################################################
 #
 #  Funcion: __main__
-#  Tarea:  Programa principal de prueba del analizador lexico
+#  Tarea:  Programa principal
 #  Prametros:  --
 #  Devuelve: --
 #
