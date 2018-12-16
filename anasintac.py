@@ -34,8 +34,10 @@ class Anasintac:
         self.alex = None  # analizador lexico
         self.c = None     # componente actual
         self.ids = {}       # tabla de simbolos implementada como un diccionario
-        self.ast = []       # arboles de sintaxis abstracta
+        self.ast = []       # arbol de sintaxis abstracta
         self.aux_ast = None
+        self.aux_ast2 = None
+        self.sentencias = []
 
 
     # coge el siguiente componente
@@ -80,10 +82,8 @@ class Anasintac:
         self.siguiente()
 
         if self.analizaPrograma():
-            print 'Programa analizado con exito\n\n- Arboles de sintaxis abstracta:\n'
-
-            for i in self.ast:
-                print i
+            print 'Programa analizado con exito\n\n- Arbol de sintaxis abstracta:\n'
+            print self.ast
         
  
     def analizaPrograma(self):
@@ -174,9 +174,10 @@ class Anasintac:
 
         elif self.c.cat == 'PR' and self.c.valor == 'VECTOR':
             self.siguiente()
+
             if self.compruebacat('CorAp'):
                 # Comprobacion semantica adicional: No puede haber vectores con un numero de elementos que no sea entero
-                if self.c.cat == 'Numero' and self.c.tipo == 'int':
+                if self.c.cat == 'Numero' and self.c.tipo == 'ENTERO':
 
                     # guardo el tamano del vector para comprobar luego que al acceder se esta dentro del rango
                     self.ids[self.actual].tamvector=self.c.valor
@@ -195,7 +196,7 @@ class Anasintac:
 
     def analizatipo_std(self):
         if self.c.cat == 'PR' and (self.c.valor in ['ENTERO','REAL','BOOLEANO']):
-            # guardo el tipo del identificador
+            # guardo el tipo del identificador o identificadores declarados
             for v in self.listavar:
                 self.ids[v].tipo=self.c.valor
             
@@ -208,12 +209,15 @@ class Anasintac:
     def analizainstrucciones(self):
         if self.c.cat == 'PR' and self.c.valor == 'INICIO':
             self.siguiente()
+
             if (
                 self.analizalista_inst()
                 and self.compruebacatyvalor('PR','FIN')
-                ): 
-                self.ast.append(AST.NodoCompuesta([AST.NodoEntero(3,self.alex.nlinea)], self.alex.nlinea))
-                return True 
+                ):
+                # creacion del nodo principal del AST de sentencia compuesta
+                self.ast = AST.NodoCompuesta(self.sentencias, self.alex.nlinea)
+
+                return True
         else:
             self.error('PR (valor = INICIO)')
 
@@ -224,8 +228,14 @@ class Anasintac:
             if (
                 self.analizainstruccion()
                 and self.compruebacat('PtoComa')
-                and self.analizalista_inst()
-                ): return True
+                ): 
+                #self.ast.append(AST.NodoAsignacion(,, self.alex.nlinea))
+                if self.aux_ast != None:
+                    self.sentencias.append(self.aux_ast)
+                    self.aux_ast=None
+
+                return self.analizalista_inst()
+                
         elif self.c.cat == 'PR' and self.c.valor == 'FIN':
             return True
         else:
@@ -234,11 +244,19 @@ class Anasintac:
 
     def analizainstruccion(self):
         if self.c.cat == 'PR' and self.c.valor == 'INICIO':
+            aux_sentencias=self.sentencias
+            self.sentencias=[]
+
             self.siguiente()
             if (
                 self.analizalista_inst()
                 and self.compruebacatyvalor('PR','FIN')
-                ): return True
+                ): 
+                # creacion de un nodo del AST de sentencia compuesta y lo agrego
+                aux_sentencias.append(AST.NodoCompuesta(self.sentencias, self.alex.nlinea))
+                self.sentencias=aux_sentencias
+
+                return True
 
         elif self.c.cat == 'Identif':
             return self.analizainst_simple()
@@ -258,11 +276,22 @@ class Anasintac:
 
         elif self.c.cat == 'PR' and self.c.valor == 'MIENTRAS':
             self.siguiente()
-            if (
-                self.analizaexpresion()
-                and self.compruebacatyvalor('PR','HACER')
-                and self.analizainstruccion()
-                ): return True
+
+            if self.analizaexpresion():
+                aux=self.aux_ast2
+
+                aux_sentencias=self.sentencias
+                self.sentencias=[]
+                
+                if (
+                    self.compruebacatyvalor('PR','HACER')
+                    and self.analizainstruccion()
+                    ): 
+                    # creacion de un nodo del AST de mientras
+                    aux_sentencias.append(AST.NodoMientras(aux, self.sentencias))
+                    self.sentencias=aux_sentencias
+
+                    return True
 
         else:
             self.error('PR (valor = INICIO) | Identif | PR (valor = LEE) | PR (valor = ESCRIBE) | PR (valor = SI) | PR (valor = MIENTRAS)')
@@ -273,9 +302,12 @@ class Anasintac:
         if self.c.cat == 'Identif':
             self.actual = self.c.valor
 
-            # Comprobacion semantica adicional: El identificador debe estar declarado previamente antes de usarlo
+            # Comprobacion semantica adicional: El identificador debe estar declarado previamente antes de acceder a el
             if self.c.valor not in self.ids:
                 return self.error('Un Identif previamente declarado')
+
+            # creacion de un nodo del AST de acceso a variable
+            self.aux_ast = AST.NodoAccesoVariable(self.c.valor, self.alex.nlinea)
             
             self.siguiente()
             return self.analizaresto_instsimple()
@@ -287,7 +319,12 @@ class Anasintac:
     def analizaresto_instsimple(self):
         if self.c.cat == 'OpAsigna':
             self.siguiente()
-            return self.analizaexpresion()
+            
+            if self.analizaexpresion():
+                # creacion de un nodo del AST de asignacion
+                self.aux_ast = AST.NodoAsignacion(self.aux_ast, self.aux_ast2, self.alex.nlinea)
+
+                return True
 
         elif self.c.cat == 'CorAp':
             self.dentrovector=True
@@ -316,6 +353,9 @@ class Anasintac:
             if self.c.valor not in self.ids:
                 return self.error('Un Identif previamente declarado')
 
+            # creacion de un nodo del AST de acceso a variable
+            self.aux_ast2 = AST.NodoAccesoVariable(self.c.valor, self.alex.nlinea)
+            
             self.siguiente()
             return self.analizaresto_var()
 
@@ -344,9 +384,20 @@ class Anasintac:
             self.siguiente()
             if self.compruebacat('CorAp'):
                 if self.c.cat == 'Identif':
+                    # Comprobacion semantica adicional: El identificador debe estar declarado previamente antes de usarlo
+                    if self.c.valor not in self.ids:
+                        return self.error('Un Identif previamente declarado')
+
+                    # creacion de un nodo del AST de acceso a variable
+                    self.aux_ast2 = AST.NodoAccesoVariable(self.c.valor, self.alex.nlinea)
+
                     # Comprobacion semantica 7: En la instruccion LEE el argumento debe ser ENTERO o REAL
                     if self.c.cat.tipo=='ENTERO' or self.c.cat.tipo=='REAL':
-                        self.siguiente()   
+                        self.siguiente()
+
+                        # creacion de un nodo del AST de lee
+                        self.aux_ast = AST.NodoLee(self.aux_ast2, self.alex.nlinea)
+
                         return self.compruebacat('CorCi')
 
                     
@@ -356,7 +407,12 @@ class Anasintac:
                 self.compruebacat('ParentAp')
                 and self.analizaexpr_simple()
                 and self.compruebacat('ParentCi')
-                ): return True
+                ): 
+                # creacion de un nodo del AST de escribe
+                self.aux_ast = AST.NodoEscribe(self.aux_ast2, self.alex.nlinea)
+
+                return True
+
         else:
             self.error('PR (valor = LEE) | PR (valor = ESCRIBE)')
 
@@ -405,11 +461,17 @@ class Anasintac:
 
     def analizaresto_exsimple(self):
         if self.c.cat == 'OpAdd':
+            aux = self.aux_ast2
             self.siguiente()
+
             if (
                 self.analizatermino()
                 and self.analizaresto_exsimple()
-                ): return True
+                ): 
+                # creacion de un nodo del AST de operacion aritmetica
+                self.aux_ast2 = AST.NodoAritmetica('OpAdd',aux,self.aux_ast2,self.alex.nlinea)
+
+                return True
 
         elif self.c.cat == 'PR' and self.c.valor == 'O':
             self.siguiente()
@@ -440,11 +502,17 @@ class Anasintac:
 
     def analizaresto_term(self):
         if self.c.cat == 'OpMult':
+            aux = self.aux_ast2
+
             self.siguiente()
             if (
                 self.analizafactor()
                 and self.analizaresto_term()
-                ): return True
+                ): 
+                # creacion de un nodo del AST de operacion aritmetica
+                self.aux_ast2 = AST.NodoAritmetica('OpMult',aux,self.aux_ast2,self.alex.nlinea)
+
+                return True
 
         elif self.c.cat == 'PR' and self.c.valor == 'Y':
             self.siguiente()
@@ -467,9 +535,9 @@ class Anasintac:
 
         elif self.c.cat == 'Numero':
             # Comprobacion semantica 5: No hay conversion para los booleanos
-            if self.actual in self.ids and self.ids[self.actual].tipo=='BOOLEANO':
+            """if self.actual in self.ids and self.ids[self.actual].tipo=='BOOLEANO':
                 print('Error: No hay conversion para los booleanos')
-                return False
+                return False"""
             
             # Comprobacion semantica 6: El numero debe estar en el rango del vector
             if self.dentrovector and self.actual in self.ids and self.ids[self.actual].tamvector!=None:
@@ -478,9 +546,16 @@ class Anasintac:
                     return False
 
             # Comprobacion semantica 3: Conversion de enteros a reales
-            if self.c.tipo == 'int':
+            if self.c.tipo == 'ENTERO':
                 self.c.valor = float(self.c.valor)
-                self.c.tipo = 'float'
+
+            
+            # creacion de un nodo del AST dependiendo de si el numero es entero o real
+            if self.c.tipo == 'ENTERO':
+                self.aux_ast2 = AST.NodoEntero(self.c.valor, self.alex.nlinea)
+            elif self.c.tipo == 'REAL':
+                self.aux_ast2 = AST.NodoReal(self.c.valor, self.alex.nlinea)
+            
 
             self.siguiente()
             return True

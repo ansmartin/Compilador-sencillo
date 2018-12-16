@@ -180,9 +180,9 @@ class Analex:
 
             # Devolver un objeto de la categoria correspondiente    
             if punto :
-                return componentes.Numero(float(num),self.nlinea,'float')
+                return componentes.Numero(float(num),self.nlinea,'REAL')
             else:
-                return componentes.Numero(int(num),self.nlinea,'int')
+                return componentes.Numero(int(num),self.nlinea,'ENTERO')
             
             
         elif ch== "\n":

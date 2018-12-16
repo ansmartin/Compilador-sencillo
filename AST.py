@@ -56,6 +56,34 @@ class NodoSi(AST):
   def arbol(self):
     return '( "Si" "linea: %d" %s\n %s\n %s\n )' % (self.linea, self.cond, self.si, self.sino)
 
+class NodoMientras(AST):
+  def __init__(self, cond, exp):
+    self.cond= cond
+    self.exp= exp
+
+  def compsemanticas(self):
+    self.exp.compsemanticas()
+    """if self.exp.tipo!= tipos.Error:
+      if self.exp.tipo!= tipos.Entero and self.exp.tipo!= tipos.Cadena:
+        errores.semantico("Solo se escribir enteros y cadenas.", self.linea)"""
+
+  def arbol(self):
+    return '( "Mientras" %s\n %s\n )' % (self.cond, self.exp)
+
+class NodoLee(AST):
+  def __init__(self, exp, linea):
+    self.exp= exp
+    self.linea= linea
+
+  def compsemanticas(self):
+    self.exp.compsemanticas()
+    """if self.exp.tipo!= tipos.Error:
+      if self.exp.tipo!= tipos.Entero and self.exp.tipo!= tipos.Cadena:
+        errores.semantico("Solo se escribir enteros y cadenas.", self.linea)"""
+
+  def arbol(self):
+    return '( "Lee" "linea: %d" %s )' % (self.linea, self.exp)
+
 class NodoEscribe(AST):
   def __init__(self, exp, linea):
     self.exp= exp
@@ -112,6 +140,7 @@ class NodoAritmetica(AST):
     self.izdo= izdo
     self.dcho= dcho
     self.linea= linea
+    self.tipo='REAL'
 
   def compsemanticas(self):
     self.izdo.compsemanticas()
@@ -135,10 +164,21 @@ class NodoEntero(AST):
 
   def compsemanticas(self):
     self.tipo= 'ENTERO'
-    return True
 
   def arbol(self):
-    return '( "Entero" "valor: %d" "tipo: %s" "linea: %d" )' % (self.valor, self.tipo, self.linea)
+    return '( "Entero" "valor: %s" "tipo: %s" "linea: %d" )' % (self.valor, self.tipo, self.linea)
+
+class NodoReal(AST):
+  def __init__(self, valor, linea):
+    self.valor= valor
+    self.linea= linea
+    self.tipo= 'REAL'
+
+  def compsemanticas(self):
+    self.tipo= 'REAL'
+
+  def arbol(self):
+    return '( "Real" "valor: %s" "tipo: %s" "linea: %d" )' % (self.valor, self.tipo, self.linea)
 
 class NodoCadena(AST):
   def __init__(self, cad, linea):
@@ -196,7 +236,7 @@ class NodoAccesoVariable(AST):
     pass
 
   def arbol(self):
-    return '( "AccesoVariable" "v: %s" "linea: %d" )' % (self.var, self.linea)
+    return '( "AccesoVariable" "nombre: %s" "linea: %d" )' % (self.var, self.linea)
 
 class NodoAccesoVector(AST):
   def __init__(self, izda, exp, linea):
