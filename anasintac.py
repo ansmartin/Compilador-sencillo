@@ -35,9 +35,9 @@ class Anasintac:
         self.c = None     # componente actual
         self.ids = {}       # tabla de simbolos implementada como un diccionario
         self.ast = []       # arbol de sintaxis abstracta
-        self.aux_ast = None
+        self.aux_ast = None   # auxiliar para guardar subarboles
         self.aux_ast2 = None
-        self.sentencias = []
+        self.sentencias = []  # lista de sentencias
 
 
     # coge el siguiente componente
@@ -266,19 +266,27 @@ class Anasintac:
 
         elif self.c.cat == 'PR' and self.c.valor == 'SI':
             self.siguiente()
-            if (
-                self.analizaexpresion()
-                and self.compruebacatyvalor('PR','ENTONCES')
-                and self.analizainstruccion()
-                and self.compruebacatyvalor('PR','SINO')
-                and self.analizainstruccion()
-                ): return True 
+            if self.analizaexpresion():
+                cond=self.aux_ast
+                if (
+                    self.compruebacatyvalor('PR','ENTONCES')
+                    and self.analizainstruccion()
+                    ):
+                    si=self.aux_ast
+                    if ( 
+                        self.compruebacatyvalor('PR','SINO')
+                        and self.analizainstruccion()
+                        ): 
+                        sino=self.aux_ast
+                        # creacion de un nodo del AST de si
+                        self.aux_ast = AST.NodoSi(cond, si, sino, self.alex.nlinea)
+                        return True 
 
         elif self.c.cat == 'PR' and self.c.valor == 'MIENTRAS':
             self.siguiente()
 
             if self.analizaexpresion():
-                aux=self.aux_ast2
+                aux=self.aux_ast
 
                 aux_sentencias=self.sentencias
                 self.sentencias=[]
@@ -288,7 +296,7 @@ class Anasintac:
                     and self.analizainstruccion()
                     ): 
                     # creacion de un nodo del AST de mientras
-                    aux_sentencias.append(AST.NodoMientras(aux, self.sentencias))
+                    aux_sentencias.append(AST.NodoMientras(aux, self.sentencias[0]))
                     self.sentencias=aux_sentencias
 
                     return True
@@ -320,14 +328,17 @@ class Anasintac:
         if self.c.cat == 'OpAsigna':
             self.siguiente()
             
+            aux=self.aux_ast
+
             if self.analizaexpresion():
                 # creacion de un nodo del AST de asignacion
-                self.aux_ast = AST.NodoAsignacion(self.aux_ast, self.aux_ast2, self.alex.nlinea)
+                self.aux_ast = AST.NodoAsignacion(aux, self.aux_ast, self.alex.nlinea)
 
                 return True
 
         elif self.c.cat == 'CorAp':
             self.dentrovector=True
+            aux=self.aux_ast
             self.siguiente()
             if (
                 self.analizaexpr_simple()
@@ -337,7 +348,11 @@ class Anasintac:
                 if ( 
                     self.compruebacat('OpAsigna') 
                     and self.analizaexpresion()
-                    ): return True 
+                    ): 
+                    exp=self.aux_ast
+                    # creacion de un nodo del AST de acceso a vector
+                    self.aux_ast = AST.NodoAccesoVector(aux, exp, self.alex.nlinea)
+                    return True 
 
         elif (self.c.cat == 'PtoComa') or (self.c.cat == 'PR' and self.c.valor == 'SINO'):
             return True
@@ -354,7 +369,7 @@ class Anasintac:
                 return self.error('Un Identif previamente declarado')
 
             # creacion de un nodo del AST de acceso a variable
-            self.aux_ast2 = AST.NodoAccesoVariable(self.c.valor, self.alex.nlinea)
+            self.aux_ast = AST.NodoAccesoVariable(self.c.valor, self.alex.nlinea)
             
             self.siguiente()
             return self.analizaresto_var()
@@ -382,23 +397,25 @@ class Anasintac:
     def analizainst_es(self):
         if self.c.cat == 'PR' and self.c.valor == 'LEE':
             self.siguiente()
-            if self.compruebacat('CorAp'):
+            if self.compruebacat('ParentAp'):
                 if self.c.cat == 'Identif':
                     # Comprobacion semantica adicional: El identificador debe estar declarado previamente antes de usarlo
                     if self.c.valor not in self.ids:
                         return self.error('Un Identif previamente declarado')
 
                     # creacion de un nodo del AST de acceso a variable
-                    self.aux_ast2 = AST.NodoAccesoVariable(self.c.valor, self.alex.nlinea)
-
+                    self.aux_ast = AST.NodoAccesoVariable(self.c.valor, self.alex.nlinea)
+                    print self.ids[self.c.valor]
                     # Comprobacion semantica 7: En la instruccion LEE el argumento debe ser ENTERO o REAL
-                    if self.c.cat.tipo=='ENTERO' or self.c.cat.tipo=='REAL':
+                    if self.ids[self.c.valor].tipo=='ENTERO' or self.ids[self.c.valor].tipo=='REAL':
                         self.siguiente()
 
                         # creacion de un nodo del AST de lee
-                        self.aux_ast = AST.NodoLee(self.aux_ast2, self.alex.nlinea)
+                        self.aux_ast = AST.NodoLee(self.aux_ast, self.alex.nlinea)
 
-                        return self.compruebacat('CorCi')
+                        return self.compruebacat('ParentCi')
+
+                    else: self.error('Identif de tipo ENTERO o REAL')
 
                     
         elif self.c.cat == 'PR' and self.c.valor == 'ESCRIBE':
@@ -409,7 +426,7 @@ class Anasintac:
                 and self.compruebacat('ParentCi')
                 ): 
                 # creacion de un nodo del AST de escribe
-                self.aux_ast = AST.NodoEscribe(self.aux_ast2, self.alex.nlinea)
+                self.aux_ast = AST.NodoEscribe(self.aux_ast, self.alex.nlinea)
 
                 return True
 
@@ -429,8 +446,16 @@ class Anasintac:
 
     def analizaexpresion2(self):
         if self.c.cat == 'OpRel':
+            op=self.c.valor
+            aux=self.aux_ast
+
             self.siguiente()
-            return self.analizaexpr_simple()
+
+            if self.analizaexpr_simple():
+                # creacion de un nodo del AST de comparacion
+                self.aux_ast = AST.NodoComparacion(op,aux,self.aux_ast,self.alex.nlinea)
+
+                return True
 
         elif (self.c.cat in ['ParentCi','PtoComa']) or (self.c.cat == 'PR' and self.c.valor in ['ENTONCES','HACER','SINO']):
             return True
@@ -461,25 +486,33 @@ class Anasintac:
 
     def analizaresto_exsimple(self):
         if self.c.cat == 'OpAdd':
-            aux = self.aux_ast2
-            self.siguiente()
+            op=self.c.valor
+            aux = self.aux_ast
 
+            self.siguiente()
             if (
                 self.analizatermino()
                 and self.analizaresto_exsimple()
                 ): 
                 # creacion de un nodo del AST de operacion aritmetica
-                self.aux_ast2 = AST.NodoAritmetica('OpAdd',aux,self.aux_ast2,self.alex.nlinea)
+                self.aux_ast = AST.NodoAritmetica(op,aux,self.aux_ast,self.alex.nlinea)
 
                 return True
 
         elif self.c.cat == 'PR' and self.c.valor == 'O':
+            op=self.c.valor
+            aux = self.aux_ast
+
             self.siguiente()
             if (
                 self.compruebacatyvalor('PR','O')
                 and self.analizatermino()
                 and self.analizaresto_exsimple()
-                ): return True
+                ): 
+                # creacion de un nodo del AST de operacion aritmetica
+                self.aux_ast = AST.NodoAritmetica(op,aux,self.aux_ast,self.alex.nlinea)
+                
+                return True
 
         elif (self.c.cat in ['CorCi','OpRel','ParentCi','PtoComa']) or (self.c.cat == 'PR' and self.c.valor in ['ENTONCES','HACER','SINO']):
             return True
@@ -502,7 +535,8 @@ class Anasintac:
 
     def analizaresto_term(self):
         if self.c.cat == 'OpMult':
-            aux = self.aux_ast2
+            op=self.c.valor
+            aux = self.aux_ast
 
             self.siguiente()
             if (
@@ -510,16 +544,23 @@ class Anasintac:
                 and self.analizaresto_term()
                 ): 
                 # creacion de un nodo del AST de operacion aritmetica
-                self.aux_ast2 = AST.NodoAritmetica('OpMult',aux,self.aux_ast2,self.alex.nlinea)
+                self.aux_ast = AST.NodoAritmetica(op,aux,self.aux_ast,self.alex.nlinea)
 
                 return True
 
         elif self.c.cat == 'PR' and self.c.valor == 'Y':
+            op=self.c.valor
+            aux = self.aux_ast
+            
             self.siguiente()
             if (
                 self.analizafactor()
                 and self.analizaresto_term()
-                ): return True
+                ): 
+                # creacion de un nodo del AST de operacion aritmetica
+                self.aux_ast = AST.NodoAritmetica(op,aux,self.aux_ast,self.alex.nlinea)
+
+                return True
 
         elif (self.c.cat in ['OpAdd','CorCi','OpRel','ParentCi','PtoComa']) or (self.c.cat == 'PR' and self.c.valor in ['O','ENTONCES','HACER','SINO']):
             return True
@@ -552,9 +593,9 @@ class Anasintac:
             
             # creacion de un nodo del AST dependiendo de si el numero es entero o real
             if self.c.tipo == 'ENTERO':
-                self.aux_ast2 = AST.NodoEntero(self.c.valor, self.alex.nlinea)
+                self.aux_ast = AST.NodoEntero(self.c.valor, self.alex.nlinea)
             elif self.c.tipo == 'REAL':
-                self.aux_ast2 = AST.NodoReal(self.c.valor, self.alex.nlinea)
+                self.aux_ast = AST.NodoReal(self.c.valor, self.alex.nlinea)
             
 
             self.siguiente()
@@ -611,7 +652,3 @@ if __name__=="__main__":
     analex = analex.Analex(fl)
     
     Anasintac().Analiza(analex)
-
-
-    
-    

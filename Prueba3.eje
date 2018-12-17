@@ -1,5 +1,5 @@
 PROGRAMA p3;
 VAR x: VECTOR[10] DE ENTERO;
 INICIO
- x[15]:=40;
+ x[1]:=40;
 FIN.

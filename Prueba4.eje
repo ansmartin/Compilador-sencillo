@@ -1,0 +1,9 @@
+PROGRAMA p3;
+VAR x: BOOLEANO; y,z: ENTERO;
+INICIO
+ SI x
+ ENTONCES 
+  LEE(y)
+ SINO 
+  ESCRIBE(z);
+FIN.

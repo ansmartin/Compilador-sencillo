@@ -131,8 +131,8 @@ class NodoComparacion(AST):
       self.tipo= tipos.Logico"""
 
   def arbol(self):
-    return '( "Comparacion" "op: %s" "tipo: %s" "linea: %d" \n %s\n %s\n)' % \
-           (self.op, self.tipo, self.linea, self.izdo, self.dcho)
+    return '( "Comparacion" "op: %s" "linea: %d" \n %s\n %s\n)' % \
+           (self.op, self.linea, self.izdo, self.dcho)
 
 class NodoAritmetica(AST):
   def __init__(self, op, izdo, dcho, linea):
@@ -243,6 +243,7 @@ class NodoAccesoVector(AST):
     self.izda= izda
     self.exp= exp
     self.linea= linea
+    self.tipo= 'ENTERO'
 
   def compsemanticas(self):
     self.izda.compsemanticas()
