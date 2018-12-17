@@ -1,5 +1,5 @@
 PROGRAMA p2;
 VAR i,x:ENTERO;
 INICIO
-  z:=8;
+  x:=8;
 FIN.
