@@ -121,7 +121,7 @@ class Analex:
             
         elif ch == "}":
             print("ERROR: Comentario no abierto") # tenemos un comentario no abierto
-            return self.Analiza()
+            return 
         
         elif ch==":":
             #Comprobar con el siguiente caracter si es una definicion de la declaracion o el operador de asignacion
@@ -208,7 +208,7 @@ if __name__=="__main__":
     script,filename=argv
     txt=open(filename)
     print "Este es tu fichero %r" % filename
-    i=0
+    
     fl = flujo.Flujo(txt)
     analex = Analex(fl)
     
@@ -216,7 +216,7 @@ if __name__=="__main__":
     while c :
         print(c)
         c=analex.Analiza()
-    i=i+1
+
     
 
     
