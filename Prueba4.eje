@@ -1,9 +1,9 @@
-PROGRAMA p3;
+PROGRAMA p4;
 VAR x: BOOLEANO; y,z: ENTERO;
 INICIO
  SI x
  ENTONCES 
-  LEE(y)
+  LEE(x)
  SINO 
   ESCRIBE(z);
 FIN.

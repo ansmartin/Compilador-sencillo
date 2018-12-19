@@ -560,12 +560,13 @@ class Anasintac:
 
         elif self.c.cat == 'Numero':
             
-            # creacion de un nodo del AST dependiendo de si el numero es entero o real
+            # creacion de un nodo del AST dependiendo de si el numero es entero, real o booleano
             if self.c.tipo == 'ENTERO':
                 self.aux_ast = AST.NodoEntero(self.c.valor, self.alex.nlinea)
             elif self.c.tipo == 'REAL':
                 self.aux_ast = AST.NodoReal(self.c.valor, self.alex.nlinea)
-
+            elif self.c.tipo == 'BOOLEANO':
+                self.aux_ast = AST.NodoBooleano(self.c.valor, self.alex.nlinea)
 
             self.siguiente()
             return True

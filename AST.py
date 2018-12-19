@@ -176,6 +176,22 @@ class NodoReal(AST):
     return '( "Real" "valor: %s" "tipo: %s" "linea: %d" )' % (self.valor, self.tipo, self.linea)
 
 
+class NodoBooleano(AST):
+  def __init__(self, valor, linea):
+    self.valor= valor
+    self.linea= linea
+    self.tipo= ''
+
+  def compsemanticas(self):
+    if self.valor==0:
+      self.tipo= 'FALSO'
+    else:
+      self.tipo= 'CIERTO'
+
+  def arbol(self):
+    return '( "Booleano" "valor: %s" "tipo: %s" "linea: %d" )' % (self.valor, self.tipo, self.linea)
+
+
 class NodoAccesoVariable(AST):
   def __init__(self, var, linea):
     self.var= var
